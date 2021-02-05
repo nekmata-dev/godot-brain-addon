@@ -16,10 +16,10 @@ export (METHOD) var method = METHOD.PHYSICAL_PROCESS
 
 export (bool) var enabled: = true
 
-func enable():
+func enable() -> void:
 	enabled = true
 
-func disable():
+func disable() -> void:
 	enabled = false
 	
 func _ready() -> void:
@@ -30,7 +30,7 @@ func _process(delta: float) -> void:
 	if method == METHOD.PROCESS:
 		_tick(delta)
 
-func _physics_process(delta: float) -> void:
+func _physics_process(delta:float) -> void:
 	if method == METHOD.PHYSICAL_PROCESS:
 		_tick(delta)
 
@@ -79,7 +79,7 @@ class BTData:
 	func set_actor(actor) -> void:
 		set(P_ACTOR, actor)
 	
-	func set_brain(brain) -> void:
+	func set_brain(brain:Brain) -> void:
 		set(P_BRAIN, brain)
 
 # ------------------------------------------------------------------------------
