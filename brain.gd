@@ -237,27 +237,30 @@ class BTParallel:
 	
 	extends BTComposite
 	
-	var _required_to_failure:int
-	var _required_to_success:int
+	var _max_failure:int
+	var _max_success:int
 	
-	func _init(required_to_failure:int = 1, required_to_success:int = 1):
-		_required_to_failure = max(1, required_to_failure)
-		_required_to_success = max(1, required_to_success)
+	func _init(max_failure:int = 1, max_success:int = -1) -> void:
+		_max_failure = max_failure
+		_max_success = max_success
 	
 	func tick(data:BTData):
 		
-		var children_suceess = 0
-		var children_failure = 0
+		var childs_count = _childs.size()
+		var childs_success = 0
+		var childs_failure = 0
+		var max_success = _max_success if _max_success > -1 else childs_count
+		var max_failure = _max_failure if _max_failure > -1 else childs_count
 		
 		for c in get_childs():
 			var result = c.tick(data)
-			if result == SUCCESS: children_suceess += 1
-			if result == FAILURE: children_failure += 1
+			if result == SUCCESS: childs_success += 1
+			if result == FAILURE: childs_failure += 1
 		
-		if children_suceess >= _required_to_success:
+		if childs_success >= max_success:
 			return SUCCESS
 		
-		if children_failure >= _required_to_failure:
+		if childs_failure >= max_failure:
 			return FAILURE
 			
 		return RUNNING
