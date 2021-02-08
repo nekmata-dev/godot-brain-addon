@@ -8,7 +8,7 @@ enum METHOD { PROCESS, PHYSICAL_PROCESS }
 
 # ------------------------------------------------------------------------------
 
-onready var actor:Actor = get_parent()
+onready var actor = get_parent()
 onready var sequence: = make_sequence()
 onready var data: = BTData.new()
 
@@ -354,26 +354,91 @@ class BTLeaf:
 
 # ------------------------------------------------------------------------------
 
+class BTCallback:
+
+	extends BTLeaf
+	
+	var _callback:String
+	var _owner
+	
+	func _init(callback:String, owner = null) -> void:
+		_callback = callback
+		_owner = owner
+	
+	func get_callback_owner(data:BTData):
+		
+		if !_callback is String:
+			return null
+		
+		var actor = data.get_actor()
+		var brain = data.get_brain()
+		var cb_result = null
+		
+		if _owner != null and _owner.has_method(_callback):
+			return _owner
+		
+		if actor.has_method(_callback):
+			return actor
+		
+		if brain.has_method(_callback):
+			return brain
+		
+		return null
+	
+	func get_callback_result(data:BTData):
+		
+		if !_callback is String:
+			return null
+		
+		var owner = get_callback_owner(data)
+		var cb_result = null
+		
+		if owner != null:
+			cb_result = owner.call(_callback)
+		
+		return cb_result
+	
+	func run_callback(data:BTData):
+		if !_callback is String:
+			return null
+		var cb_result = null
+		var owner = get_callback_owner(data)
+		
+		assert(owner != null)
+		assert(owner.has_method(_callback))
+		
+		if owner != null:
+			return owner.call(_callback)
+		
+		return null
+	
+	func run_callback_with_data(data:BTData):
+		if !_callback is String:
+			return null
+		var cb_result = null
+		var owner = get_callback_owner(data)
+		
+		assert(owner != null)
+		assert(owner.has_method(_callback))
+		
+		if owner != null:
+			return owner.call(_callback, data)
+		
+		return null
+
+# ------------------------------------------------------------------------------
+
 class BTAction:
 	
-	extends BTLeaf
+	extends BTCallback
 
-	var _callback = ""
-	var _owner = null
-
-	func _init(callback:String, owner = null) -> void:
-		_owner = owner
-		_callback = callback
+	func _init(callback:String, owner = null).(callback, owner) -> void:
+		pass
 
 	func tick(data:BTData):
-		var owner = data.get_actor() if _owner == null else _owner
-		assert(owner.has_method(_callback), "Actor must have [ %s ] method" % _callback)
-		var result = _execute(owner, _callback, data)
-		if result is int: return result
+		var cb_result = run_callback(data)
+		if cb_result is int: return cb_result
 		return SUCCESS
-	
-	func _execute(owner, callback, data:BTData):
-		return owner.call(callback)
 
 # ------------------------------------------------------------------------------
 
@@ -383,9 +448,11 @@ class BTActionWithData:
 	
 	func _init(callback:String, owner = null).(callback, owner) -> void:
 		pass
-
-	func _execute(owner, callback, data:BTData):
-		return owner.call(callback, data)
+	
+	func tick(data:BTData):
+		var cb_result = run_callback_with_data(data)
+		if cb_result is int: return cb_result
+		return SUCCESS
 
 # ------------------------------------------------------------------------------
 
@@ -458,22 +525,21 @@ class BTWaitRandom:
 
 class BTPrint:
 	
-	extends BTLeaf
+	extends BTCallback
 
 	var _value
 
-	func _init(value) -> void:
+	func _init(value, owner = null).(value, owner) -> void:
 		_value = value
 
 	func tick(data:BTData):
 		
-		var actor = data.get_actor()
-		var value = _value
+		var cb_result = get_callback_result(data)
 		
-		if actor.has_method(_value):
-			value = actor.call(_value)
-		
-		print(value as String)
+		if cb_result != null:
+			print(cb_result as String)
+		else:
+			print(_value as String)
 		
 		return SUCCESS
 
@@ -505,40 +571,36 @@ class BTDataCleaner:
 		_key = key
 
 	func tick(data:BTData) -> int:
-		if data.has(_key):
-			data.erase(_key)
+		data.erase(_key)
 		return SUCCESS
 
 # ------------------------------------------------------------------------------
 
 class BTDataSetter:
 	
-	extends BTLeaf
+	extends BTCallback
 
 	var _key
 	var _value
 
-	func _init(key, value):
+	func _init(key, value, owner = null).(value, owner):
 		_key = key
 		_value = value
 
 	func tick(data:BTData) -> int:
 		
-		var actor = data.get_actor()
+		var cb_result = get_callback_result(data)
 		
-		if _value is String and actor.has_method(_value):
-			var value = actor.call(_value)
-			if value == null:
-				return FAILURE
-			data.set(_key, value)
+		if cb_result != null:
+			data.set(_key, cb_result)
 			return SUCCESS
 			
-		if _value == null:
-			return FAILURE
+		if _value != null:
+			data.set(_key, _value)
+			return SUCCESS
 		
-		data.set(_key, _value)
+		return FAILURE
 		
-		return SUCCESS
 
 # ------------------------------------------------------------------------------
 # FACTORY
