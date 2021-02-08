@@ -131,7 +131,7 @@ class BTComposite:
 	func add_repeater() -> BTRepeater:
 		return add(BTRepeater.new()) as BTRepeater
 
-	func add_parallel(required_to_failure:int = 1, required_to_success:int = 1) -> BTParallel:
+	func add_parallel(required_to_failure:int = 1, required_to_success:int = -1) -> BTParallel:
 		return add(BTParallel.new(required_to_failure, required_to_success)) as BTParallel
 	
 	func add_failer() -> BTFailer:
@@ -559,7 +559,7 @@ static func make_selector_random() -> BTSelectorRandom:
 static func make_repeater() -> BTRepeater:
 	return BTRepeater.new()
 
-static func make_parallel(required_to_failure:int = 1, required_to_success:int = 1) -> BTParallel:
+static func make_parallel(required_to_failure:int = 1, required_to_success:int = -1) -> BTParallel:
 	return BTParallel.new(required_to_failure, required_to_success)
 
 # ------------------------------------------------------------------------------
